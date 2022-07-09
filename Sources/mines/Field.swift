@@ -1,8 +1,10 @@
 struct Field {
     private var field: [Cell] = []
     private var open: [CellStatus] = []
-    private var rows: Int
-    private var cols: Int
+    var rows: Int
+    var cols: Int
+    var cursorRow: Int
+    var cursorColumn: Int
 
     enum Cell: String {
         case empty = "."
@@ -14,9 +16,18 @@ struct Field {
         case closed
     }
 
+    enum Move {
+        case up
+        case down
+        case left
+        case right
+    }
+
     init(rows: Int, columns: Int) {
         self.rows = rows
         self.cols = columns
+        self.cursorRow = 0
+        self.cursorColumn = 0
         for _ in 0..<(rows * cols) {
             field.append(.empty)
         }
@@ -45,6 +56,8 @@ struct Field {
     mutating func resizeField(row: Int, column: Int) {
         self.rows = row
         self.cols = column
+        self.cursorRow = 0
+        self.cursorColumn = 0
         field.removeAll()
     }
 
@@ -66,6 +79,23 @@ struct Field {
         }
     }
 
+    func atCursor(row: Int, column: Int) -> Bool {
+        row == cursorRow && column == cursorColumn
+    }
+
+    mutating func openCell() {
+        open[cursorRow * cols + cursorColumn] = .visible
+    }
+
+    mutating func moveCursor(_ direction: Move) {
+        switch direction {
+        case .up    : if cursorRow > 0            { cursorRow -= 1 }
+        case .down  : if cursorRow < rows - 1     { cursorRow += 1 }
+        case .left  : if cursorColumn > 0         { cursorColumn -= 1 }
+        case .right : if cursorColumn < cols - 1  { cursorColumn += 1 }
+        }
+    }
+
     func countCellNeighbours(row: Int, column: Int) -> Int {
         var cell: Cell = .empty
         var neighboursCounter = 0
@@ -82,24 +112,26 @@ struct Field {
 }
 
 extension Field {
-    var debugPresentation: String {
-        var fieldDebug = ""
+    var fieldPresentation: String {
+        var fieldString = ""
         for row in 0..<rows {
             for col in 0..<cols {
+                fieldString += atCursor(row: row, column: col) ? "[" : " "
                 if isFieldOpen(row: row, column: col) == .visible {
                     switch getCellFor(row: row, column: col) {
                     case .mine:
-                        fieldDebug += " * "
+                        fieldString += "*"
                     case .empty:
                         let neighbours = countCellNeighbours(row: row, column: col)
-                        if neighbours > 0 { fieldDebug += "\(neighbours)" } else { fieldDebug += "   " }
+                        if neighbours > 0 { fieldString += "\(neighbours)" } else { fieldString += " " }
                     }
                 } else {
-                    fieldDebug += " . "
+                    fieldString += "#"
                 }
+                fieldString += atCursor(row: row, column: col) ? "]" : " "
             }
-            fieldDebug += "\n"
+            fieldString += "\n"
         }
-        return fieldDebug
+        return fieldString
     }
 }
