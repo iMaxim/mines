@@ -83,8 +83,14 @@ struct Field {
         row == cursorRow && column == cursorColumn
     }
 
-    mutating func openCell() {
-        open[cursorRow * cols + cursorColumn] = .visible
+    mutating func openCell() -> Cell {
+        let index = cursorRow * cols + cursorColumn
+        open[index] = .visible
+        return field[index]
+    }
+
+    mutating func openAllField() {
+        // open.map { $0 = .visible }
     }
 
     mutating func moveCursor(_ direction: Move) {

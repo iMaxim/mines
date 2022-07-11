@@ -5,21 +5,17 @@ var appState: AppState = .running
 
 var field = Field(rows: 10, columns: 10)
 field.randomizeField()
-print(field.fieldPresentation)
+terminalPrint(field.fieldPresentation)
 
 var oldt = termios()
 tcgetattr(STDIN_FILENO, &oldt)
-
 var newt = oldt
 newt.c_lflag &= ~tcflag_t(ICANON)
 newt.c_lflag &= ~tcflag_t(ECHO)
-specialCharacters.VMIN = 1
-specialCharacters.VTIME = 0
-newt.c_cc = specialCharacters
 
 tcsetattr(STDIN_FILENO, TCSAFLUSH, &newt)
 var char: UInt8 = 0
-print("\u{1B}[?25l")
+terminalPrint("\u{1B}[?25l")
 
 while appState == .running {
     read(STDIN_FILENO, &char, 1)
@@ -30,15 +26,19 @@ while appState == .running {
     case .down: field.moveCursor(.down)
     case .left: field.moveCursor(.left)
     case .right: field.moveCursor(.right)
-    case .reveal: field.openCell()
+    case .reveal: 
+        if field.openCell() == .mine {
+            // openAllField()
+            terminalPrint("BOOM!!! Press \"r\" to restart game. Press \"q\" to quit.")
+        }
     case .quit: appState = .stop 
     }
 
-    print("\u{1B}[\(field.rows + 3)A")
-    print(field.fieldPresentation)
+    terminalPrint("\u{1B}[\(field.rows)A")
+    terminalPrint(field.fieldPresentation)
 }
 
-print("\u{1B}[?25h")
+terminalPrint("\u{1B}[?25h")
 tcsetattr(STDIN_FILENO, TCSANOW, &oldt)
 
 
